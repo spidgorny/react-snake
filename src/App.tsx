@@ -36,6 +36,7 @@ interface IAppState {
 	grid: string[][];
 	head: Point;
 	tail: Point[];
+	direction: 'up' | 'down' | 'left' | 'right';
 }
 
 class App extends React.Component {
@@ -47,6 +48,7 @@ class App extends React.Component {
 		grid: [],
 		head: new Point(0, 0),
 		tail: [],
+		direction: 'right',
 	}
 
 	timer: any;
@@ -69,7 +71,7 @@ class App extends React.Component {
 	}
 
 	componentDidMount(): void {
-		this.timer = setInterval(this.logic.bind(this), 300);
+		this.timer = setInterval(this.logic.bind(this), 100);
 	}
 
 	componentWillUnmount(): void {
@@ -82,14 +84,22 @@ class App extends React.Component {
 
 	logic() {
 		let head;
-		if (this.canMoveUp()) {
+		let direction = this.state.direction;
+		const moveTry = this.state.head[this.state.direction]();
+		if (this.canMoveHere(moveTry)) {
+			head = moveTry;
+		} else if (this.canMoveUp()) {
 			head = this.state.head.up();
+			direction = 'up';
 		} else if (this.canMoveLeft()) {
 			head = this.state.head.left();
+			direction = 'left';
 		} else if (this.canMoveDown()) {
 			head = this.state.head.down();
+			direction = 'down';
 		} else if (this.canMoveRight()) {
 			head = this.state.head.right();
+			direction = 'right';
 		} else {
 			this.stop();
 			console.log('Game Over');
@@ -97,14 +107,27 @@ class App extends React.Component {
 
 		const tail = this.dragTail();
 		this.setState({
-			head, tail,
+			head, tail, direction,
 		});
 	}
 
 	dragTail() {
 		this.state.tail.unshift(this.state.head);
 		this.state.tail.pop();  // remove last tail
-    return this.state.tail;
+		return this.state.tail;
+	}
+
+	canMoveHere(point: Point) {
+		if (point.x < 0 || point.x > this.width - 1) {
+			return false;
+		}
+		if (point.y < 0 || point.y > this.height - 1) {
+			return false;
+		}
+		if (this.tailIncludes(point)) {
+			return false;
+		}
+		return true;
 	}
 
 	canMoveUp() {
@@ -112,8 +135,8 @@ class App extends React.Component {
 			return false;
 		}
 		if (this.tailIncludes(this.state.head.up())) {
-		  return false;
-    }
+			return false;
+		}
 		return true;
 	}
 
@@ -121,9 +144,9 @@ class App extends React.Component {
 		if (this.state.head.y >= this.height - 1) {
 			return false;
 		}
-    if (this.tailIncludes(this.state.head.down())) {
-      return false;
-    }
+		if (this.tailIncludes(this.state.head.down())) {
+			return false;
+		}
 		return true;
 	}
 
@@ -131,9 +154,9 @@ class App extends React.Component {
 		if (this.state.head.x <= 0) {
 			return false;
 		}
-    if (this.tailIncludes(this.state.head.left())) {
-      return false;
-    }
+		if (this.tailIncludes(this.state.head.left())) {
+			return false;
+		}
 		return true;
 	}
 
@@ -141,9 +164,9 @@ class App extends React.Component {
 		if (this.state.head.x >= this.width - 1) {
 			return false;
 		}
-    if (this.tailIncludes(this.state.head.right())) {
-      return false;
-    }
+		if (this.tailIncludes(this.state.head.right())) {
+			return false;
+		}
 		return true;
 	}
 
