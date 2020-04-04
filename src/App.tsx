@@ -39,7 +39,7 @@ class Point {
 	distanceTo(point: Point) {
 		const dx = this.x - point.x;
 		const dy = this.y - point.y;
-		return Math.sqrt(dx*dx + dy*dy);
+		return Math.sqrt(dx * dx + dy * dy);
 	}
 
 }
@@ -49,7 +49,7 @@ interface IAppState {
 	head: Point;
 	tail: Point[];
 	direction: 'up' | 'down' | 'left' | 'right';
-	food: Point[];
+	food: (Point | null)[];
 }
 
 class App extends React.Component {
@@ -139,7 +139,25 @@ class App extends React.Component {
 
 		this.setState({
 			head, tail, direction, food,
-		});
+		}, this.eatFood.bind(this));
+	}
+
+	eatFood() {
+		if (this.foodIncludes(this.state.head)) {
+			const foodIndex = this.state.food.findIndex((food: Point | null, index: number) => food && food.equals(this.state.head));
+			if (foodIndex >= 0) {
+				// delete this.state.food[foodIndex];
+				// this.state.food[foodIndex] = null;
+				let food = this.state.food;
+				food.splice(foodIndex, 1);
+				const tail = this.state.tail;
+				tail.push(this.state.head);
+				this.setState({
+					food,
+					tail,
+				});
+			}
+		}
 	}
 
 	dragTail() {
@@ -211,8 +229,8 @@ class App extends React.Component {
 	}
 
 	foodIncludes(point: Point) {
-		for (const block of this.state.food) {
-			if (block.equals(point)) {
+		for (const food of this.state.food) {
+			if (food && food.equals(point)) {
 				return true;
 			}
 		}
@@ -220,11 +238,14 @@ class App extends React.Component {
 	}
 
 	nearestFood() {
-		type IndexDistance = {index: number, distance: number};
+		type IndexDistance = { index: number, distance: number };
 		const foodDistance: IndexDistance[] = [];
 		for (const index in this.state.food) {
-			const distance = this.distanceTo(this.state.food[index]);
-			foodDistance.push({index: parseInt(index), distance});
+			let foodElement = this.state.food[index];
+			if (foodElement) {
+				const distance = this.distanceTo(foodElement);
+				foodDistance.push({index: parseInt(index), distance});
+			}
 		}
 		foodDistance.sort((id1, id2) => id1.distance - id2.distance);
 		if (foodDistance.length) {
@@ -243,7 +264,9 @@ class App extends React.Component {
 				{this.renderGrid()}
 				<div className="debug">
 					{this.state.food.map(food => {
-						return <div>{food.x} x {food.y} = {this.distanceTo(food)}</div>
+						if (food) {
+							return <div>{food.x} x {food.y} = {this.distanceTo(food)}</div>
+						}
 					})}
 				</div>
 			</div>
