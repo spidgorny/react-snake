@@ -10,5 +10,8 @@ table.grid tbody tr td {
 }
 
 td.head {
+  background-color: red;
+}
+td.tail {
   background-color: darkred;
 }
