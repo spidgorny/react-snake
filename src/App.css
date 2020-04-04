@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  display: flex;
 }
 
 table.grid tbody tr td {
@@ -14,4 +15,7 @@ td.head {
 }
 td.tail {
   background-color: darkred;
+}
+td.food {
+  background-color: darkgreen;
 }

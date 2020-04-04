@@ -5,6 +5,12 @@ class Point {
 	x: number;
 	y: number;
 
+	static random(width: number, height: number) {
+		const x = Math.round(Math.random() * width);
+		const y = Math.round(Math.random() * height);
+		return new Point(x, y);
+	}
+
 	constructor(x: number, y: number) {
 		this.x = x;
 		this.y = y;
@@ -30,6 +36,12 @@ class Point {
 		return new Point(this.x + 1, this.y);
 	}
 
+	distanceTo(point: Point) {
+		const dx = this.x - point.x;
+		const dy = this.y - point.y;
+		return Math.sqrt(dx*dx + dy*dy);
+	}
+
 }
 
 interface IAppState {
@@ -37,6 +49,7 @@ interface IAppState {
 	head: Point;
 	tail: Point[];
 	direction: 'up' | 'down' | 'left' | 'right';
+	food: Point[];
 }
 
 class App extends React.Component {
@@ -49,6 +62,7 @@ class App extends React.Component {
 		head: new Point(0, 0),
 		tail: [],
 		direction: 'right',
+		food: [],
 	}
 
 	timer: any;
@@ -67,7 +81,7 @@ class App extends React.Component {
 		const left2 = left1.left();
 		this.state.tail = [
 			left1, left2,
-		]
+		];
 	}
 
 	componentDidMount(): void {
@@ -83,22 +97,33 @@ class App extends React.Component {
 	}
 
 	logic() {
-		let head;
+		let head = this.state.head;
 		let direction = this.state.direction;
-		const moveTry = this.state.head[this.state.direction]();
+
+		const nearestFood = this.nearestFood();
+		if (nearestFood) {
+			if (nearestFood.x !== head.x) {
+				direction = nearestFood.x - head.x < 0 ? 'left' : 'right';
+			} else if (nearestFood.y !== head.y) {
+				direction = nearestFood.y - head.y < 0 ? 'up' : 'down';
+			}
+		}
+
+		// move in a circle
+		const moveTry = head[direction]();
 		if (this.canMoveHere(moveTry)) {
 			head = moveTry;
 		} else if (this.canMoveUp()) {
-			head = this.state.head.up();
+			head = head.up();
 			direction = 'up';
 		} else if (this.canMoveLeft()) {
-			head = this.state.head.left();
+			head = head.left();
 			direction = 'left';
 		} else if (this.canMoveDown()) {
-			head = this.state.head.down();
+			head = head.down();
 			direction = 'down';
 		} else if (this.canMoveRight()) {
-			head = this.state.head.right();
+			head = head.right();
 			direction = 'right';
 		} else {
 			this.stop();
@@ -106,8 +131,14 @@ class App extends React.Component {
 		}
 
 		const tail = this.dragTail();
+
+		const food = this.state.food;
+		if (food.length === 0) {
+			food.push(Point.random(this.width, this.height));
+		}
+
 		this.setState({
-			head, tail, direction,
+			head, tail, direction, food,
 		});
 	}
 
@@ -179,10 +210,42 @@ class App extends React.Component {
 		return false;
 	}
 
+	foodIncludes(point: Point) {
+		for (const block of this.state.food) {
+			if (block.equals(point)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	nearestFood() {
+		type IndexDistance = {index: number, distance: number};
+		const foodDistance: IndexDistance[] = [];
+		for (const index in this.state.food) {
+			const distance = this.distanceTo(this.state.food[index]);
+			foodDistance.push({index: parseInt(index), distance});
+		}
+		foodDistance.sort((id1, id2) => id1.distance - id2.distance);
+		if (foodDistance.length) {
+			return this.state.food[foodDistance[0].index];
+		}
+		return null;
+	}
+
+	distanceTo(point: Point) {
+		return this.state.head.distanceTo(point);
+	}
+
 	render() {
 		return (
 			<div className="App">
 				{this.renderGrid()}
+				<div className="debug">
+					{this.state.food.map(food => {
+						return <div>{food.x} x {food.y} = {this.distanceTo(food)}</div>
+					})}
+				</div>
 			</div>
 		);
 	}
@@ -200,6 +263,9 @@ class App extends React.Component {
 								}
 								if (this.tailIncludes(new Point(x, y))) {
 									cellType = 'tail';
+								}
+								if (this.foodIncludes(new Point(x, y))) {
+									cellType = 'food';
 								}
 								return <td key={x} className={cellType}/>;
 							}
