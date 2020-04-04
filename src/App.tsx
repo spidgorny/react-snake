@@ -143,20 +143,22 @@ class App extends React.Component {
 	}
 
 	eatFood() {
-		if (this.foodIncludes(this.state.head)) {
-			const foodIndex = this.state.food.findIndex((food: Point | null, index: number) => food && food.equals(this.state.head));
-			if (foodIndex >= 0) {
-				// delete this.state.food[foodIndex];
-				// this.state.food[foodIndex] = null;
-				let food = this.state.food;
-				food.splice(foodIndex, 1);
-				const tail = this.state.tail;
-				tail.push(this.state.head);
-				this.setState({
-					food,
-					tail,
-				});
-			}
+		if (!this.foodIncludes(this.state.head)) {
+			return;
+		}
+		const foodIndex = this.state.food.findIndex((food: Point | null, index: number) => food && food.equals(this.state.head));
+		console.log(foodIndex);
+		if (foodIndex >= 0) {
+			// delete this.state.food[foodIndex];
+			// this.state.food[foodIndex] = null;
+			let food = this.state.food;
+			food.splice(foodIndex, 1);
+			const tail = this.state.tail;
+			tail.push(this.state.head);
+			this.setState({
+				food,
+				tail,
+			});
 		}
 	}
 
